@@ -2,3 +2,6 @@
 	path = Demo
 	url = https://github.com/TengSea233/Demo4Echo.git
 	branch = main
+[submodule "libs/aarch64"]
+	path = libs/aarch64
+	url = https://github.com/TengSea233/Echo-Mate-Libs.git
