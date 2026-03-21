@@ -1,3 +1,40 @@
-# *.o
-.vscode
+# 编译输出
+*.o
+*.a
+*.so
+*.so.*
+*.elf
+*.bin
 
+# 构建目录
+build/
+build_*/
+bin/
+
+# 输出目录（可选，如果需要保留预编译版本则注释掉）
+# output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.tmp
+*.log
+*.bak
+.DS_Store
+
+# Docker
+.dockerenv
+
+# 敏感信息（避免提交密钥）
+*.key
+*.pem
+!cacert.pem
+
+# 大文件（由 LFS 管理）
+*.rknn
+*.pmdl
