@@ -143,13 +143,22 @@ docker exec "${CONTAINER_NAME}" bash -c "
     mkdir -p ${OUTPUT_DIR}/DeskBot_demo/bin/third_party
     cp -r bin/third_party/* ${OUTPUT_DIR}/DeskBot_demo/bin/third_party/ 2>/dev/null || true
     
-    # 复制额外的系统依赖库
+    # 复制所有必要的系统依赖库
     AARCH64_LIB_DIR=/usr/aarch64-linux-gnu/lib_local
-    for lib in libdrm.so.2; do
+    REQUIRED_LIBS="libdrm.so.2 libjsoncpp.so.25 libopus.so.0 libportaudio.so.2 libopenblas.so.0 libasound.so.2 libjson-c.so.4 libcurl.so.4"
+    
+    echo "  复制系统依赖库..."
+    for lib in \$REQUIRED_LIBS; do
         if [ -f \$AARCH64_LIB_DIR/\$lib ]; then
-            cp \$AARCH64_LIB_DIR/\$lib ${OUTPUT_DIR}/DeskBot_demo/bin/lib/
+            cp -L \$AARCH64_LIB_DIR/\$lib ${OUTPUT_DIR}/DeskBot_demo/bin/lib/
+            echo "    ✓ \$lib"
+        else
+            echo "    ⚠ \$lib 未找到"
         fi
     done
+    
+    # 设置库文件权限
+    chmod 644 ${OUTPUT_DIR}/DeskBot_demo/bin/lib/*.so* 2>/dev/null || true
 "
 echo -e "${GREEN}✓ DeskBot_demo 复制完成${NC}"
 
