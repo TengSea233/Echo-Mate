@@ -114,7 +114,7 @@ echo "  ✓ DeskBot_demo 编译完成"
 echo ""
 echo "[6/6] 复制依赖库到输出目录..."
 
-AARCH64_LIB_DIR=/usr/aarch64-linux-gnu/lib_local
+AARCH64_LIB_DIR=/project/libs/aarch64
 OUTPUT_BASE=/project/output/aarch64
 
 # yolov5_demo 输出
@@ -147,14 +147,20 @@ done
 echo "  ✓ AIChat_demo 输出到 $AICHAT_OUTPUT"
 
 # DeskBot_demo 输出（标准结构：bin/ 子目录）
+# 注意：CMake 已直接输出到 $OUTPUT_BASE/DeskBot_demo/bin/
 DESKBOT_OUTPUT=$OUTPUT_BASE/DeskBot_demo
+
+# 确保输出目录存在
 mkdir -p $DESKBOT_OUTPUT/bin
 
-# 复制主程序和资源到 bin/ 目录
-cp /project/Demo/DeskBot_demo/bin/main $DESKBOT_OUTPUT/bin/
-cp /project/Demo/DeskBot_demo/bin/system_para.conf $DESKBOT_OUTPUT/bin/
-cp /project/Demo/DeskBot_demo/bin/gaode_adcode.json $DESKBOT_OUTPUT/bin/
-cp /project/Demo/DeskBot_demo/bin/cacert.pem $DESKBOT_OUTPUT/bin/
+# 复制资源文件（这些不在 CMake 输出目录中）
+cp /project/Demo/DeskBot_demo/bin/system_para.conf $DESKBOT_OUTPUT/bin/ 2>/dev/null || true
+cp /project/Demo/DeskBot_demo/bin/gaode_adcode.json $DESKBOT_OUTPUT/bin/ 2>/dev/null || true
+cp /project/Demo/DeskBot_demo/bin/cacert.pem $DESKBOT_OUTPUT/bin/ 2>/dev/null || true
+
+# 复制配置文件目录
+mkdir -p $DESKBOT_OUTPUT/bin/conf
+cp -r /project/Demo/DeskBot_demo/conf/* $DESKBOT_OUTPUT/bin/conf/ 2>/dev/null || true
 
 # 复制库文件
 mkdir -p $DESKBOT_OUTPUT/bin/lib
@@ -201,6 +207,28 @@ case "$ARCH" in
     x86_64) LIB_PATH="/usr/lib/x86_64-linux-gnu" ;;
     *) LIB_PATH="/usr/lib" ;;
 esac
+
+# 自动检测 DRM 设备
+detect_drm_device() {
+    echo -e "${YELLOW}[检测 DRM 设备]${NC}"
+    
+    # 检查是否有 MIPI DSI 连接的 card
+    for card in /dev/dri/card2 /dev/dri/card1 /dev/dri/card0; do
+        if [ -e "$card" ]; then
+            # 检查是否有连接的显示器
+            card_name=$(basename $card)
+            if [ -d "/sys/class/drm/$card_name-DSI-1" ] && [ "$(cat /sys/class/drm/$card_name-DSI-1/status 2>/dev/null)" = "connected" ]; then
+                echo -e "${GREEN}✓ 找到 MIPI DSI 显示器: $card${NC}"
+                export LV_LINUX_DRM_CARD=$card
+                return 0
+            fi
+        fi
+    done
+    
+    # 默认使用 card0
+    echo -e "${YELLOW}! 使用默认 DRM 设备: /dev/dri/card0${NC}"
+    export LV_LINUX_DRM_CARD=/dev/dri/card0
+}
 
 # 检查并安装系统依赖
 install_system_deps() {
@@ -305,16 +333,19 @@ echo ""
 echo "架构: $ARCH"
 echo ""
 
-# 步骤 1: 修复权限
+# 步骤 1: 检测 DRM 设备
+detect_drm_device
+
+# 步骤 2: 修复权限
 fix_permissions
 
-# 步骤 2: 安装系统依赖
+# 步骤 3: 安装系统依赖
 install_system_deps
 
-# 步骤 3: 智能配置 libcurl
+# 步骤 4: 智能配置 libcurl
 setup_libcurl
 
-# 步骤 4: 检查程序依赖
+# 步骤 5: 检查程序依赖
 if ! check_program_deps; then
     echo ""
     echo -e "${RED}依赖检查失败，请手动解决上述问题${NC}"

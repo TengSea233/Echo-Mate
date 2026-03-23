@@ -22,6 +22,28 @@ case "$ARCH" in
     *) LIB_PATH="/usr/lib" ;;
 esac
 
+# 自动检测 DRM 设备
+detect_drm_device() {
+    echo -e "${YELLOW}[检测 DRM 设备]${NC}"
+    
+    # 检查是否有 MIPI DSI 连接的 card
+    for card in /dev/dri/card2 /dev/dri/card1 /dev/dri/card0; do
+        if [ -e "$card" ]; then
+            # 检查是否有连接的显示器
+            card_name=$(basename $card)
+            if [ -d "/sys/class/drm/$card_name-DSI-1" ] && [ "$(cat /sys/class/drm/$card_name-DSI-1/status 2>/dev/null)" = "connected" ]; then
+                echo -e "${GREEN}✓ 找到 MIPI DSI 显示器: $card${NC}"
+                export LV_LINUX_DRM_CARD=$card
+                return 0
+            fi
+        fi
+    done
+    
+    # 默认使用 card0
+    echo -e "${YELLOW}! 使用默认 DRM 设备: /dev/dri/card0${NC}"
+    export LV_LINUX_DRM_CARD=/dev/dri/card0
+}
+
 # 检查并安装系统依赖
 install_system_deps() {
     echo -e "${YELLOW}[检查系统依赖]${NC}"
@@ -125,16 +147,19 @@ echo ""
 echo "架构: $ARCH"
 echo ""
 
-# 步骤 1: 修复权限
+# 步骤 1: 检测 DRM 设备
+detect_drm_device
+
+# 步骤 2: 修复权限
 fix_permissions
 
-# 步骤 2: 安装系统依赖
+# 步骤 3: 安装系统依赖
 install_system_deps
 
-# 步骤 3: 智能配置 libcurl
+# 步骤 4: 智能配置 libcurl
 setup_libcurl
 
-# 步骤 4: 检查程序依赖
+# 步骤 5: 检查程序依赖
 if ! check_program_deps; then
     echo ""
     echo -e "${RED}依赖检查失败，请手动解决上述问题${NC}"

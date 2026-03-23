@@ -144,7 +144,7 @@ docker exec "${CONTAINER_NAME}" bash -c "
     cp -r bin/third_party/* ${OUTPUT_DIR}/DeskBot_demo/bin/third_party/ 2>/dev/null || true
     
     # 复制所有必要的系统依赖库
-    AARCH64_LIB_DIR=/usr/aarch64-linux-gnu/lib_local
+    AARCH64_LIB_DIR=/project/libs/aarch64
     REQUIRED_LIBS="libdrm.so.2 libjsoncpp.so.25 libopus.so.0 libportaudio.so.2 libopenblas.so.0 libasound.so.2 libjson-c.so.4 libcurl.so.4"
     
     echo "  复制系统依赖库..."
@@ -180,7 +180,7 @@ docker exec "${CONTAINER_NAME}" bash -c "
         
         # 复制库
         mkdir -p ${OUTPUT_DIR}/AIChat_demo/lib
-        AARCH64_LIB_DIR=/usr/aarch64-linux-gnu/lib_local
+        AARCH64_LIB_DIR=/project/libs/aarch64
         for lib in libjsoncpp.so.25 libopus.so.0 libportaudio.so.2 libopenblas.so.0; do
             if [ -f \$AARCH64_LIB_DIR/\$lib ]; then
                 cp \$AARCH64_LIB_DIR/\$lib ${OUTPUT_DIR}/AIChat_demo/lib/
